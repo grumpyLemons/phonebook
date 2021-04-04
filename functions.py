@@ -1,59 +1,57 @@
 import json
 import exceptions
 
-# BASIC INTERACTIONS WITH PHONEBOOK DICTIONARY
 
-# Save/load phonebook
-def load_book(file_id=0):
-    with open(f"phonebook{file_id}.json", "r") as file:
-        return json.load(file)
+# Phone book
+class PhoneBook:
 
+    def __init__(self, book_id=0) -> None:
+        self.book_id = book_id
+        try:
+            with open(f"phonebook{book_id}.json", "r") as file:
+                self.contacts_dictionary = json.load(file)
+        except FileNotFoundError or json.decoder.JSONDecodeError:
+            with open(f"phonebook{book_id}.json", "w") as file:
+                self.contacts_dictionary = {}
 
-def save_book(contacts_dictionary: dict, file_id=0):
-    with open(f"phonebook{file_id}.json", "w") as file:
-        json.dump(contacts_dictionary, file)
+    def __len__(self) -> int:
+        return len(self.contacts_dictionary)
 
+    def __str__(self) -> str:
+        return ',\n'.join([f"{name}: {self.contacts_dictionary[name]}" for name in self.contacts_dictionary])
 
-# Add/remove contacts from phonebook
-def add_contact(contacts_dictionary: dict, name: str, phone: str) -> None:
-    if name not in contacts_dictionary:
-        contacts_dictionary[name] = phone
-    else:
-        raise exceptions.ContactExists(name)
+    def save_book(self, book_id=0) -> None:
+        with open(f"phonebook{book_id}.json", "w") as file:
+            json.dump(self.contacts_dictionary, file)
 
+    # Add/remove contacts from phonebook
+    def add_contact(self, name: str, phone: str) -> None:
+        if name not in self.contacts_dictionary:
+            self.contacts_dictionary[name] = phone
+        else:
+            raise exceptions.ContactExists(name)
 
-def remove_contact(contacts_dictionary: dict, name: str) -> None:
-    if name in contacts_dictionary:
-        contacts_dictionary.pop(name)
-    else:
-        raise exceptions.ContactNotFound(name)
+    def remove_contact(self, name: str) -> None:
+        if name in self.contacts_dictionary:
+            self.contacts_dictionary.pop(name)
+        else:
+            raise exceptions.ContactNotFound(name)
 
+    # Search substring in names
+    def search_for_name(self, substring: str) -> list:
+        fitting_entries = []
+        for name in self.contacts_dictionary:
+            if substring in name:
+                fitting_entries.append(name)
+        return fitting_entries
 
-# Search substring in names
-def search_name(contacts_dictionary: dict, substring: str) -> None:
-    for name in contacts_dictionary:
-        if substring in name:
-            print(f"{name} : {contacts_dictionary[name]}")
+    def bulk_add(self, data: tuple) -> None:
+        for (name, phone) in data:
+            self.add_contact(name, phone)
 
+    def bulk_remove(self, names: tuple) -> None:
+        for name in names:
+            self.remove_contact(name)
 
-# Print phonebook's content in alphabetical order
-def print_phonebook(contacts_dictionary: dict, reverse=False) -> None:
-    if reverse:
-        print(sorted(contacts_dictionary)[::-1])
-    else:
-        print(sorted(contacts_dictionary))
-
-
-# ADVANCED FUNCTIONS
-
-# Bulk add to/remove from contact list
-'''def bulk_add(contacts_dictionary, names):
-    for name in names:
-        add_contact(contacts_dictionary, name)
-        
-
-def bulk_remove(contacts_dictionary, names):
-    for name in names:
-        remove_contact(contacts_dictionary, name)
-
-'''
+    def __del__(self) -> None:
+        self.save_book(self.book_id)
